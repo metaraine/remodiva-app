@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>RemoDiva</title>
+    <link type="text/css" rel="stylesheet" href="/style/main.css">
+  </head>
+  <body>
+    <h1>RemoDivo</h1>
+
+    <ul>
+      <% products.forEach(function(product){ %>
+        <li><%= product.pageUrl %></li>
+      <% }); %>
+    </ul>
+  </body>
+</html>

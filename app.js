@@ -1,4 +1,5 @@
 var express        = require('express');
+var ejs            = require('ejs');
 var bodyParser     = require('body-parser')
 var monk           = require('monk')
 var passport       = require('passport')
@@ -11,6 +12,7 @@ var session        = require('express-session')
 var findOrInsert = require('./findOrInsert')
 var db = monk(config.connectionString)
 var users = db.get('users')
+var products = db.get('products')
 
 /***************************************************
  * PASSPORT
@@ -60,7 +62,8 @@ function ensureAuthenticated(req, res, next) {
  * EXPRESS
  ***************************************************/
 var app = express();
-app.set('view engine', 'jade');
+app.set('view engine', 'html');
+app.engine('html', ejs.renderFile);
 app.set('views', __dirname + '/views');
 app.use(morgan('dev'));
 app.use(cookieParser());
@@ -79,9 +82,13 @@ app.use(express.static(__dirname + '/public'));
 /***************************************************
  * ROUTES
  ***************************************************/
-app.get('/', function(req, res) {
-  console.log('user', req.user)
-	res.render('index');
+app.get('/', function (req, res) {
+  products.find({})
+    .then(function(products) {
+      res.render('index', {
+        products: products
+      });
+    })
 });
 
 app.get('/auth/google',
@@ -91,23 +98,33 @@ app.get('/auth/google',
 
 app.get('/auth/google/callback',
   passport.authenticate('google', { failureRedirect: '/login' }),
-  function(req, res) {
+  function (req, res) {
     // Successful authentication, redirect home.
     res.redirect('/');
   });
 
-app.get('/logout', function(req, res){
+app.get('/logout', function (req, res){
   req.logout();
   res.redirect('/');
 });
 
-app.get('/account', ensureAuthenticated, function(req, res){
+app.get('/account', ensureAuthenticated, function (req, res){
   res.render('account', { user: req.user });
 });
 
-app.get('/login', function(req, res){
+app.get('/login', function (req, res){
   res.render('login', { user: req.user });
 });
+
+app.post('/product', function (req, res) {
+  products.insert(req.body)
+    .then(function (user) {
+      res.send().status(200)
+    }, function(err) {
+      console.error(err)
+      res.send('Error inserting new product').status(500)
+    })
+})
 
 
 /***************************************************
